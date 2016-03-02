@@ -4,36 +4,51 @@
 	<meta charset="utf-8">
 	<script src="/socket.io/socket.io.js"></script>
 	<script>
-		var socket, canvas, ctx;
-		var user = 'user' + (Math.floor((Math.random()*1000)) + 1);
-		var cDraws = {};
+	var socket, canvas, ctx;
+	//var user = 'user' + (Math.floor((Math.random()*1000)) + 1);
+	var cDraws = {};
+	
+		function init(){
+			canvas = document.querySelector('canvas');
+			ctx = canvas.getContext("2d");
+			socket = io.connect();
+			canvas.addEventListener("onmouseover", mouseOver, false);
+			canvas.addEventListener("onmouseout", mouseOut, false);
+			start(socket);
+		}
 		
-			function init(){
-				canvas = document.querySelector('canvas');
-				ctx = canvas.getContext("2d");
-				socket = io.connect();
-				canvas.addEventListener("onmouseover", mouseOver, false);
-				canvas.addEventListener("onmouseout", mouseOut, false);
-				start(socket);
+			function mouseOver(e){
+				var x = event.x;
+				var y = event.y;
 			}
 			
-				function mouseOver(e){
-					var x = event.x;
-					var y = event.y;
-				}
-				
-				function mouseOut(e){
-				
-				}
-				
-				function start(socket){
-					socket.on('startDraw', function(){
-						
-					
-					});
-				}
+			function mouseOut(e){
 			
-		window.onload = init();
+			}
+			
+			function start(socket){
+				socket.on('draw', function(data){
+					ctx.clearRect(0, 0, canvas.width, canvas.height);
+					
+					for(var i = 0; i < data.length; i++){
+						var tempCircle = data[i];
+						console.log(tempCircle);
+						ctx.save();
+						ctx.beginPath();
+						ctx.fillStyle = "rgb(0,0,0)";
+						ctx.arc(tempCircle.position.x, 
+								tempCircle.position.y, 
+								tempCircle.radius,
+								0, Math.PI * 2, 
+								false);
+						ctx.closePath();
+						ctx.fill();
+						ctx.restore();
+					}
+				});
+			}
+			
+	window.onload = init;
 	</script>
 	<style>
 		html,body{
@@ -54,6 +69,6 @@
 	</style>
 </head>
 <body>
-	<canvas width="500" height="500"></canvas>
+	<canvas id="canvas" width="500" height="500"></canvas>
 </body>
 </html>
