@@ -1,0 +1,30 @@
+{
+  "name": "bubbleblob",
+  "version": "1.0.0",
+  "description": "A light web app that syncs client interactions together",
+  "main": "./src/server.js",
+  "scripts": {
+    "start": "node ./src/server.js",
+    "pretest": "jshint ./src",
+    "test": "echo 'complete'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MisterRee/BubbleBlob.git"
+  },
+  "keywords": [
+    "Node",
+    "NPM",
+    "socket.io"
+  ],
+  "author": "Danny Lee",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MisterRee/BubbleBlob/issues"
+  },
+  "homepage": "https://github.com/MisterRee/BubbleBlob#readme",
+  "devDependencies": {
+    "jshint": "^2.9.1",
+    "socket.io": "^1.4.5"
+  }
+}

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+		var socket, canvas, ctx;
+		var user = 'user' + (Math.floor((Math.random()*1000)) + 1);
+		var cDraws = {};
+		
+			function init(){
+				canvas = document.querySelector('canvas');
+				ctx = canvas.getContext("2d");
+				socket = io.connect();
+				canvas.addEventListener("onmouseover", mouseOver, false);
+				canvas.addEventListener("onmouseout", mouseOut, false);
+				start(socket);
+			}
+			
+				function mouseOver(e){
+					var x = event.x;
+					var y = event.y;
+				}
+				
+				function mouseOut(e){
+				
+				}
+				
+				function start(socket){
+					socket.on('startDraw', function(){
+						
+					
+					});
+				}
+			
+		window.onload = init();
+	</script>
+	<style>
+		html,body{
+			margin:0;
+			background-color: #000;
+		}
+		canvas{
+			display:block;
+			position:absolute;
+			resize: both;
+			top: 50%; bottom: 0; right: 0; left: 0;
+			transform: translateY(-50%);
+			padding: 10px;
+			margin-left: auto;
+			margin-right: auto;
+			background-color: #FFF;
+		}
+	</style>
+</head>
+<body>
+	<canvas width="500" height="500"></canvas>
+</body>
+</html>
