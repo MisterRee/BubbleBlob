@@ -1,11 +1,7 @@
 
-function Bubble(px,py,vx,vy){
+exports.Bubble = function(px,py,vx,vy,r,rd){
 	this.position = {x:px, y:py};
 	this.velocity = {x:vx, y:vy};
-	this.radius = 5;
-	
-	this.update = function(){
-		this.position.x += this.velocity.x;
-		this.position.y += this.velocity.y;
-	};
+	this.radius = r;
+	this.radiusDecay = rd;
 }
