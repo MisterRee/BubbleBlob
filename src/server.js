@@ -29,12 +29,31 @@ io.sockets.on('connection', function(socket){
 function start(socket){
 	socket.on('clientMouseOnStream', function(data){
 		var index = users.indexOf(socket);
-		users[index].onCanvas = true;
 		users[index].mousePosition = { x:data.x, y:data.y };
+		
+		if(users[index].Bubble == undefined){
+			var tempBubble = new Bubble(
+				users[index].mousePosition.x,
+				users[index].mousePosition.y,
+				0,0,20,0,"user");
+			users[index].Bubble = tempBubble;
+			sDraws.push(users[index].Bubble);
+		}
+		
+		users[index].Bubble.userDraw = true;
+	});
+	socket.on('clientMouseOffStream', function(){
+		var index = users.indexOf(socket);
+		
+		if(users[index].Bubble != undefined){
+			users[index].Bubble.userDraw = false;
+		}
 	});
 	//createNoise();
 	createInitialBubbles(20);
-	setInterval(loop, 60);
+	setInterval(function(){
+		loop(socket);
+	}, 60);
 }
 
 	/*
@@ -49,54 +68,56 @@ function start(socket){
 	}
 	*/
 
-	function createInitialBubbles(num){
-		for(var i = 0; i < num; i++){
-			var tempBubble = initBasicBubble();
-			sDraws.push(tempBubble);
-		}
-	}
-
-function loop(){
-	serverUpdate();
-	io.sockets.emit('draw', {d1:sDraws, d2:users });
-	//io.sockets.emit('drawUsers', {data:users, color:"rgba(255,0,0,0.5)"} );
+function loop(socket){
+	serverUpdate(socket);
+	io.sockets.emit('draw', sDraws);
 }
 
 	// magic happens here
-	function serverUpdate(){
-		for(var i = sDraws.length - 1; i >= 0; i--){
-			if(sDraws[i].radius - sDraws[i].radiusDecay > 0) {
-				sDraws[i].radius -= sDraws[i].radiusDecay;
-			}
-			else {
-				sDraws.splice(i, 1);
-				var tempBubble = initBasicBubble();
-				sDraws.push(tempBubble);
-
-				continue;
-			}
-
-			cycleBubble(sDraws[i]);
-		}
-
+	function serverUpdate(socket){
 		for(var i = users.length -1; i >= 0; i--){
-			if(users[i].onCanvas){
-				if(users[i].Bubble == undefined){
-					var tempBubble = initBasicBubble();
-						users[i].Bubble = tempBubble;
+			if(users[i].Bubble != undefined){
+				if(users[i].Bubble.userDraw){
+					users[i].Bubble.position = users[i].mousePosition;
 				}
+			}
+		}
+		
+		for(var i = sDraws.length - 1; i >= 0; i--){
+			switch(sDraws[i].type){
+				case "neutral":
+					if(sDraws[i].radius - sDraws[i].radiusDecay > 0) {
+						sDraws[i].radius -= sDraws[i].radiusDecay;
+					}
+					else {
+						sDraws.splice(i, 1);
+						var tempBubble = initBasicBubble();
+						sDraws.push(tempBubble);
 
-				cycleBubble(users[i].Bubble);
+						continue;
+					}
+
+					cycleBubble(sDraws[i]);
+				break;
+				case "user":
+					if(!sDraws[i].userDraw){
+						var index = users.indexOf(socket);
+						users[index].Bubble = undefined;
+						sDraws.splice(i, 1);
+					}
+				break;
 			}
 		}
 	}
 
 // Bubble Object
-function Bubble(px,py,vx,vy,r,rd){
+function Bubble(px,py,vx,vy,r,rd,t){
 	this.position = {x:px, y:py};
 	this.velocity = {x:vx, y:vy};
 	this.radius = r;
 	this.radiusDecay = rd;
+	this.type = t;
+	this.userDraw = true;
 }
 
 function initBasicBubble(){
@@ -106,8 +127,16 @@ function initBasicBubble(){
 		generateNumber(-1,1),
 		generateNumber(-1,1),
 		Math.random() * 20,
-		Math.random() + 0.01);
+		Math.random() + 0.01,
+		"neutral");
 	return tempBubble;
+}
+
+function createInitialBubbles(num){
+	for(var i = 0; i < num; i++){
+		var tempBubble = initBasicBubble();
+		sDraws.push(tempBubble);
+	}
 }
 
 function cycleBubble(bubble){
