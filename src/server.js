@@ -1,7 +1,8 @@
 var http = require('http');
 var fs = require('fs');
 var socketio = require('socket.io');
-var perlinScript = require('./perlin.js');
+var Bubble = require('./Bubble.js');
+
 var port = process.env.PORT || process.env.NODE_PORT || 3000;
 var index = fs.readFileSync(__dirname + '/../client/client.html');
 
@@ -12,152 +13,139 @@ function onRequest(request, responce){
 }
 
 var app = http.createServer(onRequest).listen(port);
-console.log("Listening on 127.0.0.1:" + port);
 var io = socketio(app);
-perlinScript.noise.seed(Math.random());
-
-// Server globals
 var users = [];
 var sDraws = [];
 
-io.sockets.on('connection', function(socket){
-	socket.join('main'); // There's only one room
-	users.push(socket);
-	start(socket);
-});
+// ----- ----- ----- ----------------------------------- ----- ----- -----
+// ----- ----- ----- <([ Functions on server process ])> ----- ----- -----
+// ----- ----- ----- ----------------------------------- ----- ----- -----
+serverbegin(); // Starts right away
 
-function start(socket){
-	socket.on('clientMouseOnStream', function(data){
-		var index = users.indexOf(socket);
-		users[index].mousePosition = { x:data.x, y:data.y };
-		
-		if(users[index].Bubble == undefined){
-			var tempBubble = new Bubble(
-				users[index].mousePosition.x,
-				users[index].mousePosition.y,
-				0,0,20,0,"user");
-			users[index].Bubble = tempBubble;
-			sDraws.push(users[index].Bubble);
-		}
-		
-		users[index].Bubble.userDraw = true;
-	});
-	socket.on('clientMouseOffStream', function(){
-		var index = users.indexOf(socket);
-		
-		if(users[index].Bubble != undefined){
-			users[index].Bubble.userDraw = false;
-		}
-	});
-	//createNoise();
-	createInitialBubbles(20);
+function serverbegin(){
+	for(var i = 0; i < /*<<::|NUM_BUBBLES|::>>*/20/*::<<|NUM_BUBBLES|>>::*/; i++){ // Server starts with set number of neutral bubbles
+		var tempBubble = Bubble.initBasic();
+		sDraws.push(tempBubble);
+	} 
 	setInterval(function(){
-		loop(socket);
-	}, 60);
+		serverUpdate(); // All calculations done server-side
+		io.sockets.emit('draw', sDraws); // Emits sDraw array to all clients for them to redraw
+	}, 60); // Gotta go fast
 }
 
-	/*
-	function createNoise(){
-		for (var x = 0; x < 500; x++) {
-			for (var y = 0; y < 500; y++) {
-		    var value = perlinScript.noise.simplex2(x / 100, y / 100);
-		    var value = perlinScript.noise.simplex2(x / 100, y / 100);
-	  		image[x][y].r = Math.abs(value) * 256; // Or whatever. Open demo.html to see it used with canvas.
-			}
-	  }
-	}
-	*/
-
-function loop(socket){
-	serverUpdate(socket);
-	io.sockets.emit('draw', sDraws);
-}
-
-	// magic happens here
-	function serverUpdate(socket){
-		for(var i = users.length -1; i >= 0; i--){
-			if(users[i].Bubble != undefined){
-				if(users[i].Bubble.userDraw){
-					users[i].Bubble.position = users[i].mousePosition;
-				}
+	// magic calculations happens here
+	function serverUpdate(){
+		for(var i = users.length - 1; i >= 0; i--){
+			if(users[i].Bubble.userDraw){ // userDraw acts as a toggle if mouse is on client canvas
+				users[i].Bubble.position = users[i].mousePosition;
+			} else { // Gets associated client's bubble out of the drawing scope if mouse is not on client canvas
+				users[i].Bubble.position = {x:-50, y:-50};
 			}
 		}
 		
-		for(var i = sDraws.length - 1; i >= 0; i--){
-			switch(sDraws[i].type){
+		for(var u = sDraws.length - 1; u >= 0; u--){
+			switch(sDraws[u].type){ // Switch in case if more bubble types are to be added
 				case "neutral":
-					if(sDraws[i].radius - sDraws[i].radiusDecay > 0) {
-						sDraws[i].radius -= sDraws[i].radiusDecay;
+					if(sDraws[u].radius - sDraws[u].radiusDecay > 0) {
+						sDraws[u].radius -= sDraws[u].radiusDecay;
 					}
 					else {
-						sDraws.splice(i, 1);
-						var tempBubble = initBasicBubble();
+						sDraws.splice(u, 1);
+						var tempBubble = Bubble.initBasic();
 						sDraws.push(tempBubble);
 
-						continue;
+						continue; //Skip Bubble animation cycle
 					}
 
-					cycleBubble(sDraws[i]);
-				break;
-				case "user":
-					if(!sDraws[i].userDraw){
-						var index = users.indexOf(socket);
-						users[index].Bubble = undefined;
-						sDraws.splice(i, 1);
-					}
+					cycleBubble(sDraws[u],"neutral"); 
 				break;
 			}
 		}
 	}
+	
+		function cycleBubble(bubble, type){ // cycleBubble runs specific bubble behaviors
+			switch(type){
+				case "neutral":
+					bubble.position.x += bubble.velocity.x;
+					bubble.position.y += bubble.velocity.y;
 
-// Bubble Object
-function Bubble(px,py,vx,vy,r,rd,t){
-	this.position = {x:px, y:py};
-	this.velocity = {x:vx, y:vy};
-	this.radius = r;
-	this.radiusDecay = rd;
-	this.type = t;
-	this.userDraw = true;
-}
+					if(bubble.position.x < 0){
+						bubble.position.x = 500;
+					}
+					if(bubble.position.x > 500){
+						bubble.position.x = 0;
+					}
+					if(bubble.position.y < 0){
+						bubble.position.y = 500;
+					}
+					if(bubble.position.y > 500){
+						bubble.position.y = 0;
+					}
+					break;
+			}
+		}
 
-function initBasicBubble(){
-	var tempBubble = new Bubble(
-		generateNumber(0, 500),
-		generateNumber(0, 500),
-		generateNumber(-1,1),
-		generateNumber(-1,1),
-		Math.random() * 20,
-		Math.random() + 0.01,
-		"neutral");
-	return tempBubble;
-}
+// ----- ----- ----- ------------------------------------ ----- ----- -----
+// ----- ----- ----- <([ Functions on client behavior ])> ----- ----- -----
+// ----- ----- ----- ------------------------------------ ----- ----- -----
+io.sockets.on('connection', function(socket){
+	onJoined(socket);
+	onDisconnect(socket);
+	onMouseEvent(socket);
+});
 
-function createInitialBubbles(num){
-	for(var i = 0; i < num; i++){
-		var tempBubble = initBasicBubble();
-		sDraws.push(tempBubble);
+	function onJoined(socket){ // called right as client connects to http
+		socket.on('join', function(userID){	
+			socket.join('main'); // There's only one room in this app
+			socket.userColor = Bubble.colorize();
+			var tempBubble = new Bubble.init(-50,-50,0,0,20,false,"user",socket.userColor);
+			socket.userID = userID;
+			socket.Bubble = tempBubble;
+			socket.mousePosition = {x:-50, y:-50};
+			users.push(socket);
+			sDraws.push(socket.Bubble);
+			socket.emit('clientColorSet', socket.userColor);
+		});
 	}
-}
 
-function cycleBubble(bubble){
-	bubble.position.x += bubble.velocity.x;
-	bubble.position.y += bubble.velocity.y;
+	function onDisconnect(socket){ // called when client exits http
+		socket.on('disconnect', function(){
+			var currentUser;
+			var userBubble;
+			
+			for(var i = users.length - 1; i >= 0; i--){
+				if(socket.userID == users[i].userID){
+					currentUser = users[i];
+				}
+			}
+			if(currentUser != undefined){
+				var userBubble = sDraws.indexOf(currentUser.Bubble);
+				
+				sDraws[userBubble].userDraw = false;
+				sDraws.splice(userBubble, 1);
+				console.log("Bubble Sliced");
+				users.splice(currentUser, 1);
+				console.log("User disconnected");
+			}
+		});
+	}
 
-	if(bubble.position.x < 0){
-		bubble.position.x = 500;
+	function onMouseEvent(socket){
+		socket.on('clientMouseOnStream', function(clientData){ // called when client moves mouse over canvas
+			for(var i = users.length - 1; i >= 0; i--){
+				if(socket.userID == users[i].userID){
+					var currentUser = users[i];
+					currentUser.Bubble.userDraw = true;
+					currentUser.mousePosition = clientData;
+				}
+			}
+		});
+		socket.on('clientMouseOffStream', function(){ // called when client moves mouse out of canvas
+			for(var u = users.length - 1; u >= 0; u--){
+				if(socket.userID == users[u].userID){
+					var currentUser = users[u];
+					currentUser.Bubble.userDraw = false;
+				}
+			}
+		});
 	}
-	if(bubble.position.x > 500){
-		bubble.position.x = 0;
-	}
-	if(bubble.position.y < 0){
-		bubble.position.y = 500;
-	}
-	if(bubble.position.y > 500){
-		bubble.position.y = 0;
-	}
-}
-
-// Inclusive on min and max
-function generateNumber(min, max){
-	return Math.random() * (max - min + 1) + min;
-}
