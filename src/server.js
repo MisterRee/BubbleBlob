@@ -62,6 +62,8 @@ function serverbegin(){
 								sDraws[y].points -= 1;
 							}
 						}
+						var bloom = Bubble.createBloom(bubble.position,bubble.baseRadius * 3,bubble.color);
+						sDraws.push(bloom);
 						sDraws.splice(index, 1);
 						var tempBubble = Bubble.initBasic(clientBounds);
 						sDraws.push(tempBubble);
@@ -97,6 +99,20 @@ function serverbegin(){
 						bubble.position = {x:-500, y:-500};
 					}
 					break;
+				case "bloom":
+					if(bubble.bloomOut){
+						if(bubble.radius + bubble.radiusDecay < bubble.baseRadius){
+							bubble.radius += bubble.radiusDecay;
+						} else {
+							bubble.bloomOut = false;
+						}
+					} else {
+						if(bubble.radius - bubble.radiusDecay > 0){
+							bubble.radius -= bubble.radiusDecay / 2;
+						} else {
+							sDraws.splice(index, 1);
+						}
+					}
 			}
 		}
 
@@ -140,6 +156,8 @@ function serverbegin(){
 							sDraws[t].type = "neutral";
 							sDraws[t].color = "rgba(255,255,255,0.50)";
 							sDraws[t].radius = sDraws[t].radius / 2;
+							var bloom = Bubble.createBloom(sDraws[t].position,sDraws[t].baseRadius * 3,userb.color);
+							sDraws.push(bloom);
 							userb.points = 0;
 						}
 					}

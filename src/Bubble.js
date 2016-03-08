@@ -11,6 +11,7 @@ module.exports = {
 		this.color = c;
 		this.userID = uid;
 		this.points = 0;
+		this.bloomOut = false;
 	},
 
 	initBasic: function (clientBounds){
@@ -66,6 +67,28 @@ module.exports = {
 			}
 		}
 		return output;
+	},
+
+	createBloom: function(position,maxRadius,color){
+		var tempBubble = new Bubble(
+			position.x,
+			position.y,
+			0,
+			0,
+			maxRadius,
+			maxRadius / 10,
+			"bloom",
+			color,
+			0);
+		tempBubble.radius = 0;
+		tempBubble.bloomOut = true;
+
+		var tempLength = tempBubble.color.length - 1;
+		var tempOpacityString = tempBubble.color.substring(tempLength - 4, tempLength - 1);
+		var opacity = "," + (parseFloat(tempOpacityString) / 8) + ")";
+		tempBubble.color = tempBubble.color.substring(0,tempLength - 5) + opacity;
+
+		return tempBubble;
 	}
 }
 
@@ -81,6 +104,7 @@ function Bubble(px,py,vx,vy,r,rd,t,c,uid){
 	this.color = c;
 	this.userID = uid;
 	this.points = 0;
+	this.bloomOut = false;
 }
 
 function generateNumber(min, max){
