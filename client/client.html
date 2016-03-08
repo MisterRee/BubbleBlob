@@ -46,9 +46,17 @@
 
 		for(var i = 0; i < data.length; i++){
 			var tempCircle = data[i];
+			var isUser = false;
+			if(data[i].type == "user"){
+				isUser = true;
+			}
 			ctx.save();
 			ctx.beginPath();
 			ctx.fillStyle = data[i].color;
+			if(isUser){
+				ctx.strokeStyle = "rgba(255,255,255,0.8)";
+				ctx.lineWidth = 3;
+			}
 			ctx.arc(tempCircle.position.x,
 					tempCircle.position.y,
 					tempCircle.radius,
@@ -56,6 +64,9 @@
 					false);
 			ctx.closePath();
 			ctx.fill();
+			if(isUser){
+				ctx.stroke();
+			}
 			ctx.restore();
 		}
 	}
@@ -93,7 +104,7 @@
 </head>
 <body>
 	<div id="wrap">
-		<canvas id="canvas" width="500" height="500"></canvas>
+		<canvas id="canvas" width="750" height="500"></canvas>
 	</div>
 </body>
 </html>
