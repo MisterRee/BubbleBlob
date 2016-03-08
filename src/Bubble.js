@@ -23,7 +23,7 @@ module.exports = {
 			Math.random() * 20,
 			Math.random() / 2 + 0.01,
 			"neutral",
-			"rgba(255,255,255,0.50)",
+			"rgba(255,255,255,0.80)",
 			0);
 		return tempBubble;
 	},
@@ -35,7 +35,7 @@ module.exports = {
 		var g = generateNumber(0,r);
 		points -= g;
 		var b = points;
-		var string = "rgba(" + Math.floor(r) + "," + Math.floor(g) + "," + Math.floor(b) + ",0.50)"
+		var string = "rgba(" + Math.floor(r) + "," + Math.floor(g) + "," + Math.floor(b) + ",0.80)"
 		return string;
 	},
 
