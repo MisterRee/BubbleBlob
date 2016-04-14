@@ -1,3 +1,3 @@
 # BubbleBlob
 
-[Demo Here!](https://github.com/MisterRee/BubbleBlob.git)
+[Demo Here!](https://bubbleblob.herokuapp.com)
