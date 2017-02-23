@@ -1,228 +1,258 @@
-var http = require('http');
-var fs = require('fs');
-var socketio = require('socket.io');
-var Bubble = require('./Bubble.js');
+// Pulling dependencies
+const http = require( 'http' );
+const fs = require( 'fs' );
+const socketio = require( 'socket.io' );
+const Bubble = require( './Bubble.js' );
 
-var port = process.env.PORT || process.env.NODE_PORT || 3000;
-var index = fs.readFileSync(__dirname + '/../client/client.html');
+// Socket/Port constants
+const port = process.env.PORT || process.env.NODE_PORT || 3000;
+const index = fs.readFileSync( __dirname + '/../client/client.html' );
 
-function onRequest(request, responce){
-	responce.writeHead(200, {"Content-Type": "text/html"});
+function onRequest( request, responce ){
+	responce.writeHead( 200, { "Content-Type": "text/html" } );
 	responce.write(index);
 	responce.end();
 }
 
-var app = http.createServer(onRequest).listen(port);
-var io = socketio(app);
-var clientBounds = {x:750,y:500};
-var users = [];
-var userColors = [];
-var sDraws = [];
+const app = http.createServer( onRequest ).listen( port );
+const io = socketio( app );
+
+// Game constants
+const num_bubbles = 30;
+const rate_call = 60;
+const user_growth_ratio = 3;
+
+// Game variables
+let clientBounds = { x: 750, y: 500 };
+let users = [];
+let userColors = [];
+let bubbleArray = [];
 
 // ----- ----- ----- ------------------------------------- ----- ----- -----
 // ----- ----- ----- <([ Functions on server processes ])> ----- ----- -----
 // ----- ----- ----- ------------------------------------- ----- ----- -----
-serverbegin(); // Starts right away
 
-function serverbegin(){
-	for(var i = 0; i < /*<<::|NUM_BUBBLES|::>>*/30/*::<<|NUM_BUBBLES|>>::*/; i++){ // Server starts with set number of neutral bubbles
-		var tempBubble = Bubble.initBasic(clientBounds);
-		sDraws.push(tempBubble);
+// Setup upon server startup
+const serverInit = function(){
+	for( let i = 0; i < num_bubbles; i++ ){
+		let tempBubble = Bubble.initBasic( clientBounds );
+		bubbleArray.push( tempBubble );
 	}
-	setInterval(function(){
-		serverUpdate(); // All calculations done server-side
-		io.sockets.emit('draw', sDraws); // Emits sDraw array to all clients for them to redraw
-	}, /*<<::|RATE_CALL|::>>*/60/*::<<|RATE_CALL|>>::*/); // Gotta go fast
-}
+	setInterval( function(){
+		serverCalculate();
+		io.sockets.emit( 'draw', bubbleArray );
+	}, rate_call );
+};
 
-	function serverUpdate(){
-		for(var i = sDraws.length - 1; i >= 0; i--){
-			cycleBubble(sDraws[i],i);
-		}
-
-		var cList = Bubble.detectCollisions(sDraws);
-
-		for(var u = cList.length - 1; u >= 0; u--){
-			for(var y = cList[u].collisions.length - 1; y >= 0; y--){
-				resolveCollision(cList[u].reference, cList[u].collisions[y]);
-			}
-		}
+// Frame calculations
+const serverCalculate = function(){
+	for( let i = bubbleArray.length - 1; i >= 0; i-- ){
+		cycleBubble( bubbleArray[ i ], i );
 	}
 
-		function cycleBubble(bubble,index){ // cycleBubble runs specific bubble behaviors
-			switch(bubble.type){
-				case "neutral":
-				case "colored":
-					if(bubble.radius - bubble.radiusDecay > 0) {
-						bubble.radius -= bubble.radiusDecay;
-					} else {
-						for(var y = sDraws.length - 1; y >= 0; y--){
-							if(sDraws[y].color == bubble.color &&
-							   sDraws[y].type == "user"){
-								sDraws[y].points -= 1;
-							}
-						}
-						var bloom = Bubble.createBloom(bubble.position,bubble.baseRadius * 3,bubble.color);
-						sDraws.push(bloom);
-						sDraws.splice(index, 1);
-						var tempBubble = Bubble.initBasic(clientBounds);
-						sDraws.push(tempBubble);
+	var cList = Bubble.detectCollisions( bubbleArray );
 
-						break;
-					}
-
-					bubble.position.x += bubble.velocity.x;
-					bubble.position.y += bubble.velocity.y;
-
-					if(bubble.position.x + bubble.radius < 0){
-						bubble.position.x = clientBounds.x + bubble.radius;
-					}
-					if(bubble.position.x - bubble.radius > clientBounds.x){
-						bubble.position.x = -bubble.radius;
-					}
-					if(bubble.position.y  + bubble.radius < 0){
-						bubble.position.y = clientBounds.y + bubble.radius;
-					}
-					if(bubble.position.y - bubble.radius > clientBounds.y){
-						bubble.position.y = -bubble.radius;
-					}
-					break;
-				case "user":
-					if(bubble.userDraw){
-						for(var i = users.length - 1; i >= 0; i--){
-							if(bubble.userID == users[i].userID){
-								bubble.position = users[i].mousePosition;
-								bubble.radius = bubble.baseRadius + (bubble.points/ /*::<<|GROWTH_RATIO|>>::*/3/*::<<|GROWTH_RATIO|>>::*/);
-							}
-						}
-					} else {
-						bubble.position = {x:-500, y:-500};
-					}
-					break;
-				case "bloom":
-					if(bubble.bloomOut){
-						if(bubble.radius + bubble.radiusDecay < bubble.baseRadius){
-							bubble.radius += bubble.radiusDecay;
-						} else {
-							bubble.bloomOut = false;
-						}
-					} else {
-						if(bubble.radius - bubble.radiusDecay > 0){
-							bubble.radius -= bubble.radiusDecay / 2;
-						} else {
-							sDraws.splice(index, 1);
-						}
-					}
-			}
+	for( let u = cList.length - 1; u >= 0; u-- ){
+		for( let y = cList[ u ].collisions.length - 1; y >= 0; y-- ){
+			resolveCollision( cList[ u ].reference, cList[ u ].collisions[ y ] );
 		}
+	}
+};
 
-		function resolveCollision(bubble1, bubble2){
-			switch(bubble1.type){ // never would have thought a nested switch statement would be necessary
-				case "user":
-					if(bubble2.type == "neutral"){
-						userToNeutral(bubble1, bubble2);
-					}
-					if(bubble2.type == "colored"){
-						userTocolored(bubble1, bubble2);
-					}
-					break;
-				case "neutral":
-					if(bubble2.type == "user"){
-						userToNeutral(bubble2, bubble1);
-					}
-					break;
-				case "colored":
-					if(bubble2.type == "user"){
-						userTocolored(bubble2, bubble1);
-					}
-					break;
-			}
-		}
+// Runs calculations and behaviors regarding specific bubble-type
+const cycleBubble = function( bubble, index ){
+	/*
+		There are four bubble-types which the server designates to each bubble during calculations.
+		- Neutral: These bubbles are randomly generated with random parameters. They are meant to collide with the user's bubble to convert to that player's color.
+		- Colored: A neutral bubble that has been claimed by a user. Interacts with other players besides the one that has claimed the prior neutral bubble.
+		- User: The indication hitbox bubble that follows the user's mouse position. Besides indicating hitbox range, this is simply a visual.
+		- Bloom: An opacity cut visual bubble to indicate that either a neutral or colored bubble has decayed past its lifetime.
+	*/
 
-			function userToNeutral(userb, neutralb){
-				neutralb.color = userb.color;
-				neutralb.radius = neutralb.radius * 2;
-				neutralb.type = "colored";
-				userb.points += 1;
-			}
-
-			function userTocolored(userb, coloredb){
-				if(userb.color == coloredb.color){
-					return;
-				} else {
-					for(var t = sDraws.length - 1; t >= 0; t--){
-						if(sDraws[t].type == "colored" &&
-						   sDraws[t].color == userb.color){
-							sDraws[t].type = "neutral";
-							sDraws[t].color = "rgba(255,255,255,0.50)";
-							sDraws[t].radius = sDraws[t].radius / 2;
-							var bloom = Bubble.createBloom(sDraws[t].position,sDraws[t].baseRadius * 3,userb.color);
-							sDraws.push(bloom);
-							userb.points = 0;
-						}
+	switch( bubble.type ){
+		case "neutral":
+		case "colored":
+			// Check if the bubble can survive its current decay rate.
+			// If it can, it decays
+			// If it cant, it is removed from the array and a Bloom bubble is spawned in its coordinates
+			if( bubble.radius - bubble.radiusDecay > 0 ) {
+				bubble.radius -= bubble.radiusDecay;
+			} else {
+				for( let y = bubbleArray.length - 1; y >= 0; y-- ){
+					if( bubbleArray[ y ].color == bubble.color &&
+					    bubbleArray[ y ].type == "user"){
+						bubbleArray[ y ].points -= 1;
 					}
 				}
+
+				const bloom = Bubble.createBloom( bubble.position,bubble.baseRadius * 3,bubble.color );
+				bubbleArray.push( bloom );
+				bubbleArray.splice( index, 1 );
+				const tempBubble = Bubble.initBasic( clientBounds );
+				bubbleArray.push( tempBubble );
+
+				// Code below is omitted for this deleted bubble instance
+				break;
 			}
+
+			// Frame calculations for autonomous movement
+			bubble.position.x += bubble.velocity.x;
+			bubble.position.y += bubble.velocity.y;
+
+			// Calculations for bouncing off edges
+			if( bubble.position.x + bubble.radius < 0 ){
+				bubble.position.x = clientBounds.x + bubble.radius;
+			}
+			if( bubble.position.x - bubble.radius > clientBounds.x ){
+				bubble.position.x = -bubble.radius;
+			}
+			if( bubble.position.y  + bubble.radius < 0 ){
+				bubble.position.y = clientBounds.y + bubble.radius;
+			}
+			if( bubble.position.y - bubble.radius > clientBounds.y ){
+				bubble.position.y = -bubble.radius;
+			}
+			break;
+		case "user":
+			if( bubble.userDraw ){
+				// Finds the right user socket to the bubble, and draws to its mouse position
+				// The more points the user has, the larger his user bubble becomes
+				for(var i = users.length - 1; i >= 0; i--){
+					if(bubble.userID == users[i].userID){
+						bubble.position = users[i].mousePosition;
+						bubble.radius = bubble.baseRadius + ( bubble.points/ user_growth_ratio );
+					}
+				}
+			} else {
+				// Throw this bubble off-screen if user is not drawing
+				bubble.position = { x: -500, y: -500 };
+			}
+			break;
+		case "bloom":
+			// Checks if this bloom bubble is blowing outwards or inwards
+			// Removed from the array once its run its course
+			if( bubble.bloomOut ){
+				if( bubble.radius + bubble.radiusDecay < bubble.baseRadius ){
+					bubble.radius += bubble.radiusDecay;
+				} else {
+					bubble.bloomOut = false;
+				}
+			} else {
+				if( bubble.radius - bubble.radiusDecay > 0 ){
+					bubble.radius -= bubble.radiusDecay / 2;
+				} else {
+					bubbleArray.splice( index, 1 );
+				}
+			}
+	}
+};
+
+const resolveCollision = function( bubble1, bubble2 ){
+	switch( bubble1.type ){
+		case "user":
+			if( bubble2.type == "neutral" ){
+				userToNeutral( bubble1, bubble2 );
+			}
+			if( bubble2.type == "colored" ){
+				userTocolored( bubble1, bubble2 );
+			}
+			break;
+		case "neutral":
+			if( bubble2.type == "user" ){
+				userToNeutral( bubble2, bubble1 );
+			}
+			break;
+		case "colored":
+			if( bubble2.type == "user" ){
+				userTocolored( bubble2, bubble1 );
+			}
+			break;
+	}
+};
+
+	const userToNeutral = function( userb, neutralb ){
+		neutralb.color = userb.color;
+		neutralb.radius = neutralb.radius * 2;
+		neutralb.type = "colored";
+		userb.points += 1;
+	};
+
+	const userTocolored = function( userb, coloredb ){
+		if( userb.color == coloredb.color ){
+			return;
+		} else {
+			for( let t = bubbleArray.length - 1; t >= 0; t-- ){
+				if(bubbleArray[ t ].type == "colored" &&
+				   bubbleArray[ t ].color == userb.color ){
+					bubbleArray[ t ].type = "neutral";
+					bubbleArray[ t ].color = "rgba(255,255,255,0.50)";
+					bubbleArray[ t ].radius = bubbleArray[ t ].radius / 2;
+					var bloom = Bubble.createBloom( bubbleArray[ t ].position, bubbleArray[ t ].baseRadius * 3, userb.color );
+					bubbleArray.push( bloom );
+					userb.points = 0;
+				}
+			}
+		}
+	};
 
 // ----- ----- ----- ------------------------------------ ----- ----- -----
 // ----- ----- ----- <([ Functions on client behavior ])> ----- ----- -----
 // ----- ----- ----- ------------------------------------ ----- ----- -----
-io.sockets.on('connection', function(socket){
-	onJoined(socket);
-	onDisconnect(socket);
-	onMouseEvent(socket);
+io.sockets.on( 'connection', function( socket ){
+
+	// called right as client connects to http
+	socket.on( 'join', function( userID ){
+		socket.join('main'); // There's only one room in this app at the moment
+		socket.userColor = Bubble.colorize();
+		const tempBubble = new Bubble.init( -500, -500 , 0, 0, 20, false, "user", socket.userColor, userID );
+		socket.userID = userID;
+		socket.Bubble = tempBubble;
+		socket.mousePosition = { x: -500, y: -500 };
+		users.push( socket );
+		bubbleArray.push( socket.Bubble );
+		socket.emit( 'clientColorSet', socket.userColor );
+	});
+
+	// called when client exits http
+	socket.on('disconnect', function(){
+		let currentUser;
+
+		// Find disconnected user index
+		for( let i = users.length - 1; i >= 0; i-- ){
+			if( socket.userID == users[ i ].userID ){
+				currentUser = users[ i ];
+			}
+		}
+
+		if( currentUser != undefined ){
+			let userBubble = bubbleArray.indexOf( currentUser.Bubble );
+
+			bubbleArray[ userBubble ].userDraw = false;
+			bubbleArray.splice( userBubble, 1 );
+			users.splice( currentUser, 1 );
+		}
+	});
+
+	// called when client moves mouse over canvas
+	socket.on( 'clientMouseOnStream', function( clientData ){
+		for( let i = users.length - 1; i >= 0; i-- ){
+			if( socket.userID == users[ i ].userID ){
+				var currentUser = users[ i ];
+				currentUser.Bubble.userDraw = true;
+				currentUser.mousePosition = clientData;
+			}
+		}
+	});
+
+	// called when client moves mouse out of canvas
+	socket.on( 'clientMouseOffStream', function(){
+		for( let u = users.length - 1; u >= 0; u-- ){
+			if( socket.userID == users[ u ].userID ){
+				var currentUser = users[ u ];
+				currentUser.Bubble.userDraw = false;
+			}
+		}
+	});
 });
 
-	function onJoined(socket){ // called right as client connects to http
-		socket.on('join', function(userID){
-			socket.join('main'); // There's only one room in this app
-			socket.userColor = Bubble.colorize();
-			var tempBubble = new Bubble.init(-500,-500,0,0,20,false,"user",socket.userColor, userID);
-			socket.userID = userID;
-			socket.Bubble = tempBubble;
-			socket.mousePosition = {x:-500, y:-500};
-			users.push(socket);
-			sDraws.push(socket.Bubble);
-			socket.emit('clientColorSet', socket.userColor);
-		});
-	}
-
-	function onDisconnect(socket){ // called when client exits http
-		socket.on('disconnect', function(){
-			var currentUser;
-			var userBubble;
-
-			for(var i = users.length - 1; i >= 0; i--){
-				if(socket.userID == users[i].userID){
-					currentUser = users[i];
-				}
-			}
-			if(currentUser != undefined){
-				var userBubble = sDraws.indexOf(currentUser.Bubble);
-
-				sDraws[userBubble].userDraw = false;
-				sDraws.splice(userBubble, 1);
-				users.splice(currentUser, 1);
-			}
-		});
-	}
-
-	function onMouseEvent(socket){
-		socket.on('clientMouseOnStream', function(clientData){ // called when client moves mouse over canvas
-			for(var i = users.length - 1; i >= 0; i--){
-				if(socket.userID == users[i].userID){
-					var currentUser = users[i];
-					currentUser.Bubble.userDraw = true;
-					currentUser.mousePosition = clientData;
-				}
-			}
-		});
-		socket.on('clientMouseOffStream', function(){ // called when client moves mouse out of canvas
-			for(var u = users.length - 1; u >= 0; u--){
-				if(socket.userID == users[u].userID){
-					var currentUser = users[u];
-					currentUser.Bubble.userDraw = false;
-				}
-			}
-		});
-	}
+serverInit(); // Starts right away
