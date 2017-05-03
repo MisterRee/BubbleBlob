@@ -4,9 +4,11 @@ var gulp = require( 'gulp' ),
     notify = require( 'gulp-notify' ),
     babel = require( 'gulp-babel' ),
     browserify = require( 'browserify' ),
-    buffer = require( 'gulp-buffer' ),
-    babelify = require( 'babelify' );
-
+    //buffer = require( 'gulp-buffer' ),
+    babelify = require( 'babelify' ),
+    source = require('vinyl-source-stream'),
+    buffer = require('vinyl-buffer');
+/*
 gulp.task( 'break', function(){
   gulp.src( './js/**.js' )
     .pipe( babel({ presets: [ 'react' ]}) )
@@ -18,11 +20,13 @@ gulp.task( 'break', function(){
 });
 
 gulp.task( 'browser', function(){
-  var source = browserify({
-    entries: './js/App.js'
-  })
+  var b = browserify({
+    entries: './js/render.js'
+  });
 
-  source.bundle()
+  b.bundle()
+    .pipe( source( 'bundle.js' ) )
+    .pipe( buffer() )
     .pipe( babel({ presets: [ 'react' ] }) )
     .pipe( gulp.dest( './dist' ) )
     .pipe( notify({
@@ -30,21 +34,23 @@ gulp.task( 'browser', function(){
       onLast: true
     }) )
 });
-
+*/
 // BUILDING JS
 gulp.task( 'js', function(){
   browserify({
     debug: true
   })
-    .transform( babelify, { presets: [ 'react' ] } )
-    .require( './js/App.js', { entry: true } )
+    .transform( babelify, { presets: [ 'es2015', 'react' ] } )
+    .require( './js/render.js', { entry: true } )
     .bundle()
-    .pipe( gulp.dest( './' ) )
+    .pipe( source( 'bundle.js' ) )
+    .pipe( gulp.dest( './dist' ) )
     .pipe( notify({
       message: 'Build complete',
       onLast: true
     }) )
 });
+
 
 // Runs tests on any file changes in js/ folder
 gulp.task( 'watch', function(){
@@ -53,4 +59,4 @@ gulp.task( 'watch', function(){
   });
 });
 
-gulp.task( 'default', ['break'] );
+gulp.task( 'default', ['js'] );

@@ -7,15 +7,17 @@ const Bubble = require( './Bubble.edit.js' );
 
 // Socket/Port constants
 const port = process.env.PORT || process.env.NODE_PORT || 3000;
-const index = fs.readFileSync( __dirname + './../client/client.html' );
+const index = fs.readFileSync( __dirname + './../dist/client.html' );
 
 function onRequest( request, responce ){
 	responce.writeHead( 200, { "Content-Type": "text/html" } );
-	responce.write(index);
+	responce.write( index );
 	responce.end();
 }
 
 const app = http.createServer( onRequest ).listen( port );
+
+/*
 const io = socketio( app );
 
 // Game constants
@@ -29,9 +31,6 @@ let users = [];
 let userColors = [];
 let bubbleArray = [];
 
-// ----- ----- ----- ------------------------------------- ----- ----- -----
-// ----- ----- ----- <([ Functions on server processes ])> ----- ----- -----
-// ----- ----- ----- ------------------------------------- ----- ----- -----
 
 // Setup upon server startup
 const init = function(){
@@ -80,13 +79,6 @@ const serverCalculate = function(){
 
 // Runs calculations and behaviors regarding specific bubble-type
 const cycleBubble = function( bubble, index ){
-	/*
-		There are four bubble-types which the server designates to each bubble during calculations.
-		- Neutral: These bubbles are randomly generated with random parameters. They are meant to collide with the user's bubble to convert to that player's color.
-		- Colored: A neutral bubble that has been claimed by a user. Interacts with other players besides the one that has claimed the prior neutral bubble.
-		- User: The indication hitbox bubble that follows the user's mouse position. Besides indicating hitbox range, this is simply a visual.
-		- Bloom: An opacity cut visual bubble to indicate that either a neutral or colored bubble has decayed past its lifetime.
-	*/
 
 	switch( bubble.type ){
 		case "neutral":
@@ -214,9 +206,6 @@ const resolveCollision = function( bubble1, bubble2 ){
 		}
 	};
 
-// ----- ----- ----- ------------------------------------ ----- ----- -----
-// ----- ----- ----- <([ Functions on client behavior ])> ----- ----- -----
-// ----- ----- ----- ------------------------------------ ----- ----- -----
 io.sockets.on( 'connection', function( socket ){
 
 	// called right as client connects to http
@@ -275,3 +264,4 @@ io.sockets.on( 'connection', function( socket ){
 });
 
 init(); // Starts right away
+*/

@@ -12,9 +12,9 @@ var _ClientRender = require('./ClientRender.js');
 
 var _ClientRender2 = _interopRequireDefault(_ClientRender);
 
-require('./client.css');
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+//import './client.css';
 
 var count = 10;
 

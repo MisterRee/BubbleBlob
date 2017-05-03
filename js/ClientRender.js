@@ -1,5 +1,7 @@
-import React from 'react';
-import './client.css';
+//import React from 'react';
+//import './client.css';
+
+const React = require( 'React' );
 
 class ClientRender extends React.Component {
   constructor( props ){
@@ -28,4 +30,4 @@ class ClientRender extends React.Component {
   }
 };
 
-export default ClientRender;
+module.exports = ClientRender;
