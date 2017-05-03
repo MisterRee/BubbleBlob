@@ -11,6 +11,7 @@
     "express": "^4.15.2",
     "gulp": "^3.9.1",
     "gulp-babel": "^6.1.2",
+    "gulp-debug": "^3.1.0",
     "gulp-notify": "^3.0.0",
     "gulp-uglify": "^2.1.2",
     "performance-now": "^2.1.0",
@@ -23,7 +24,7 @@
   },
   "devDependencies": {},
   "scripts": {
-    "start": "node ./dist/server.js",
+    "start": "node App.js",
     "test": "echo 'complete'"
   },
   "repository": {
