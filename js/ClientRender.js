@@ -1,22 +1,20 @@
 //import React from 'react';
 //import './client.css';
-
 const React = require( 'React' );
 
 class ClientRender extends React.Component {
   constructor( props ){
     super( props );
-    this.canvas = <canvas className="GUI" ref="canvas"></canvas>;
   }
 
   render(){
     return (
       <div className="App">
         <div className="Header">
-          <h1>Bubble Blobs</h1>
+          <h1>Bubbles.io</h1>
         </div>
         <div className="Color"></div>
-        { this.canvas }
+        <canvas className="GUI" ref="canvas"></canvas>
         <div className="Footer">
           <p> { this.props.count } </p>
         </div>
@@ -25,8 +23,11 @@ class ClientRender extends React.Component {
   }
 
   componentDidMount(){
-    this.canvas = this.refs.canvas;
-    this.ctx    = this.canvas.getContext( "2d" );
+    this.updateCanvas();
+  }
+
+  updateCanvas(){
+    const ctx = this.refs.canvas.getContext( '2d' );
   }
 };
 
