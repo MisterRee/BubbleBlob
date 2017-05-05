@@ -1,6 +1,8 @@
 //import React from 'react';
 //import './client.css';
-const React = require( 'React' );
+
+const React = require( 'react' );
+let socket;
 
 class ClientRender extends React.Component {
   constructor( props ){
@@ -23,12 +25,27 @@ class ClientRender extends React.Component {
   }
 
   componentDidMount(){
+    socket = this.props.socket;
     this.updateCanvas();
   }
 
   updateCanvas(){
-    const ctx = this.refs.canvas.getContext( '2d' );
+    const cvs = this.refs.canvas;
+    const ctx = cvs.getContext( '2d' );
   }
 };
 
 module.exports = ClientRender;
+
+const mouseOver  = function( canvasObject, evt ){
+  const coord = getMousePos( canvasObject, evt );
+  socket.emit( 'clientMouseOnStream', coord );
+};
+
+const getMousePos = function( canvasObject , evt ){
+  const rect = canvasObject.getBoundingClientRect();
+  return {
+    x: evt.clientX - rect.left,
+    y: evt.clientY - rect.top
+  };
+}

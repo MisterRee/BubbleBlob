@@ -1,23 +1,21 @@
-'use strict';
-
 // Pulling dependencies
-var http = require('http');
-var fs = require('fs');
-var socketio = require('socket.io');
-var now = require('performance-now');
-var Bubble = require('./Bubble.edit.js');
+const http = require( 'http' );
+const fs = require( 'fs' );
+const socketio = require( 'socket.io' );
+const now = require( 'performance-now' );
+const Bubble = require( './Bubble.edit.js' );
 
 // Socket/Port constants
-var port = process.env.PORT || process.env.NODE_PORT || 3000;
-var index = fs.readFileSync(__dirname + './../dist/client.html');
+const port = process.env.PORT || process.env.NODE_PORT || 3000;
+const index = fs.readFileSync( __dirname + './../dist/client.html' );
 
-function onRequest(request, responce) {
-	responce.writeHead(200, { "Content-Type": "text/html" });
-	responce.write(index);
+function onRequest( request, responce ){
+	responce.writeHead( 200, { "Content-Type": "text/html" } );
+	responce.write( index );
 	responce.end();
 }
 
-var app = http.createServer(onRequest).listen(port);
+const app = http.createServer( onRequest ).listen( port );
 
 /*
 const io = socketio( app );

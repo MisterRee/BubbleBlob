@@ -1,15 +1,25 @@
 const express = require( 'express' );
 const App = express();
 
-App.use( express.static( 'public' ) );
+const server = require( 'http' ).createServer( App );
+const io = require( 'socket.io' )( server );
+io.on( 'connection', function( client ){
+  console.log( 'Client connected!' );
 
-const io = require( 'socket.io' ).listen( App.listen( 3000 ) );
+  client.on( 'join', function(data){
+    console.log( 'data' );
+  });
+})
+
+App.use( express.static( __dirname + '/public' ) );
 
 App.get( '/', function( req, res ){
   res.sendFile( __dirname + '/public/client.html' );
 });
 
-const Bubble = require( './js/Bubble.js' );
+server.listen( 3000 );
+
+//const Bubble = require( './js/Bubble.js' );
 
 // Game variables
 const c_gr = 3;  // user growth ratio
@@ -21,6 +31,7 @@ let users = [];
 let userColors = [];
 let bubbleArray = [];
 
+/*
 const gameInit = function(){
   for( let i = 0; i < c_nb; i++ ){
     let tempBubble = Bubble.createBase( clientBounds );
@@ -46,3 +57,4 @@ const gameLoop = function(){
 
 	setImmediate( gameLoop );
 }
+*/
