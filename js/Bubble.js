@@ -1,13 +1,15 @@
 // Constants
+const maxInitialRadius = 20;
 const maxBloomRadius = 20;
-const bloomDecayRate = 0.1;
+const minDecayRate = 0.1;
+const bloomRatio = 0.5;
 
 // Base Object
-function BubbleClass( px, py, pvx, pvy, pr, prd, pt, pc, pid ) {
+function BubbleClass( px, py, pvx, pvy, pr, pbr, prd, pt, pc, pid ) {
 	this.position = { x: px, y: py };
-	this.velocity = { x: pvx, y: pvy };
+	this.velocity = { x: pvx, y: pvy }; // pixel traveled per 1000 milliseconds
 	this.radius = pr;
-	this.baseRadius = pr;
+	this.baseRadius = pbr;
 	this.radiusDecay = prd;
 	this.type = pt;
 	this.color = pc;
@@ -22,18 +24,39 @@ function generateNumber( min, max ) {
 }
 
 const Bubble = {
-	createBase: function createBase( px, py, pvx, pvy, pr, prd, pt, pc, pid ) {
-		const bubble = new BubbleClass( px, py, pvx, pvy, pr, prd, pt, pc, pid );
+	createBase: function createBase( bounds ) {
+		const bubble = new BubbleClass(
+			generateNumber( 0, bounds.x ),
+			generateNumber( 0, bounds.y ),
+			generateNumber( -10, 10 ),
+			generateNumber( -10, 10 ),
+			generateNumber( 0, maxInitialRadius ),
+			maxInitialRadius,
+			generateNumber( minDecayRate, 1 ),
+			"neutral",
+			"rbga(255,255,255,0.8)",
+			0 );
+
 		return bubble;
 	},
 
 	createNeutral: function createNeutral( clientBounds ) {
-		const bubble = new BubbleClass( generateNumber( 0, clientBounds.x ), generateNumber( 0, clientBounds.y ), generateNumber( -1, 1 ), generateNumber( -1, 1 ), generateNumber( 0, maxBloomRadius ), Math.random() / 2 + 0.01, "neutral", "rgba(255,255,255,0.80)", 0 );
+		const bubble = new BubbleClass(
+			generateNumber( 0, clientBounds.x ),
+			generateNumber( 0, clientBounds.y ),
+			generateNumber( -10, 10 ),
+			generateNumber( -10, 10 ),
+			generateNumber( 0, maxInitialRadius ),
+			maxInitialRadius,
+			generateNumber( minDecayRate, 1 ),
+			"neutral",
+			"rgba(255,255,255,0.80)",
+			0 );
 		return bubble;
 	},
 
 	createBloom: function createBloom( position, maxRadius, color ) {
-		const bubble = new BubbleClass( position.x, position.y, 0, 0, maxRadius, maxRadius * bloomDecayRate, "bloom", color, 0 );
+		const bubble = new BubbleClass( position.x, position.y, 0, 0, maxRadius, maxInitialRadius, maxRadius * bloomRatio, "bloom", color, 0 );
 		bubble.radius = 0;
 		bubble.bloom = true;
 
@@ -42,7 +65,7 @@ const Bubble = {
 		const opacity = "," + parseFloat( tempOpacityString ) / 8 + ")";
 		bubble.color = bubble.color.substring( 0, tempLength - 5 ) + opacity;
 
-		return tempBubble;
+		return bubble;
 	},
 
 	colorize: function colorize() {

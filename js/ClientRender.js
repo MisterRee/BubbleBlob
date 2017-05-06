@@ -1,8 +1,10 @@
-//import React from 'react';
-//import './client.css';
-
+const now = require( 'performance-now' );
 const React = require( 'react' );
-let socket;
+
+let socket, cvs, ctx;
+
+let tbr = 0; // time between requests
+let lrc; // last called time
 
 class ClientRender extends React.Component {
   constructor( props ){
@@ -26,26 +28,86 @@ class ClientRender extends React.Component {
 
   componentDidMount(){
     socket = this.props.socket;
-    this.updateCanvas();
-  }
+    cvs = this.refs.canvas;
+    cvs.width = cvs.clientWidth;
+    cvs.height = cvs.clientHeight;
 
-  updateCanvas(){
-    const cvs = this.refs.canvas;
-    const ctx = cvs.getContext( '2d' );
+    window.onresize = function(){
+      cvs.width = cvs.clientWidth;
+      cvs.height = cvs.clientHeight;
+    };
+
+    ctx = this.refs.canvas.getContext( '2d' );
+    clientInit();
   }
+};
+
+const clientInit = function(){
+  if( !socket || !ctx ){
+    return;
+  };
+
+  socket.on( 'connect', function( data ){
+    socket.emit( 'join', 'Hello World from Client-side' );
+  });
+
+  socket.on( 'bubblePush', function( data ){
+    clientDraw( data );
+  });
+
+  clientLoop();
+};
+
+const clientLoop = function(){
+  if( !lrc ){
+    lrc = now();
+    requestAnimationFrame( clientLoop );
+    return;
+  };
+
+  let delta = ( now() - lrc );
+  lrc = now();
+  tbr = 1 / delta;
+
+  socket.emit( 'bubblePull' );
+  requestAnimationFrame( clientLoop );
+};
+
+const clientDraw = function( data ){
+  ctx.clearRect( 0, 0, cvs.width, cvs.height );
+
+  for( let i = 0; i < data.length; i++ ){
+    const tempBubble = data[ i ];
+    let isUser = false;
+
+    if( data[ i ].type == "user" ){
+      isUser = true;
+    }
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.fillStyle = data[ i ].color;
+
+    if( isUser ){
+      ctx.strokeStyle = "rgba(255,255,255,0.8)";
+      ctx.lineWidth = 3;
+    }
+
+    ctx.arc(
+      tempBubble.position.x,
+      tempBubble.position.y,
+      tempBubble.radius,
+      0, Math.PI * 2,
+      false );
+    ctx.closePath();
+    ctx.fill();
+
+    if( isUser ){
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  };
 };
 
 module.exports = ClientRender;
-
-const mouseOver  = function( canvasObject, evt ){
-  const coord = getMousePos( canvasObject, evt );
-  socket.emit( 'clientMouseOnStream', coord );
-};
-
-const getMousePos = function( canvasObject , evt ){
-  const rect = canvasObject.getBoundingClientRect();
-  return {
-    x: evt.clientX - rect.left,
-    y: evt.clientY - rect.top
-  };
-}
