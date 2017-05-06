@@ -12,18 +12,33 @@ io.on( 'connection', function( client ){
 
   client.on( 'join', function( data ){
     client.join( 'main' ); // There's only one room in this app at the moment
-		//socket.userColor = Bubble.colorize();
-		//const tempBubble = Bubble.createBase( -500, -500 , 0, 0, 20, false, "user", socket.userColor, userID );
-		//socket.userID = userID;
-		//socket.Bubble = tempBubble;
-		//socket.mousePosition = { x: -500, y: -500 };
-		//users.push( socket );
-		//bubbleArray.push( socket.Bubble );
-		//socket.emit( 'clientColorSet', socket.userColor );
+
+		client.userColor = Bubble.colorize();
+    client.user = "user1"; // TODO "user1" should be generated id
+
+		const tempBubble = Bubble.createBase( -500, -500 , 0, 0, 20, 20, 0, "user", client.userColor, "user1" );
+		client.Bubble = tempBubble;
+
+		client.mousePosition = { x: -500, y: -500 };
+
+		users.push( client );
+		bubbleArray.push( client.Bubble );
+
+		client.emit( 'clientColorPush', client.userColor );
   });
 
   client.on( 'bubblePull', function(){
     client.emit( 'bubblePush', bubbleArray );
+  });
+
+  client.on( 'mousePush', function( data ){
+    for( let i = users.length - 1; i >= 0; i-- ){
+			if( client.user == users[ i ].user ){
+				var currentUser = users[ i ];
+				currentUser.Bubble.draw = true;
+				currentUser.mousePosition = data;
+			}
+		}
   });
 });
 
@@ -178,15 +193,15 @@ const cycleBubble = function( bubble, index, time ){
 				bubble.position.y = -bubble.radius;
 			}
 			break;
-    /*
+
 		case "user":
 			if( bubble.draw ){
 				// Finds the right user socket to the bubble, and draws to its mouse position
 				// The more points the user has, the larger his user bubble becomes
 				for(var i = users.length - 1; i >= 0; i--){
-					if(bubble.user == users[i].user){
-						bubble.position = users[i].mousePosition;
-						bubble.radius = bubble.baseRadius + ( bubble.points/ c_gr );
+					if(bubble.user == users[ i ].user){
+						bubble.position = users[ i ].mousePosition;
+						bubble.radius = bubble.baseRadius + ( bubble.points / c_gr );
 					}
 				}
 			} else {
@@ -194,7 +209,7 @@ const cycleBubble = function( bubble, index, time ){
 				bubble.position = { x: -500, y: -500 };
 		}
 			break;
-    */
+
 		case "bloom":
 			// Checks if this bloom bubble is blowing outwards or inwards
 			// Removed from the array once its run its course

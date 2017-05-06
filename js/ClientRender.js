@@ -1,7 +1,10 @@
 const now = require( 'performance-now' );
 const React = require( 'react' );
 
-let socket, cvs, ctx;
+let socket, cvs, ctx, ucv;
+let mrs = false; // mouse ready state
+let mos = false; // mouse over state
+let mec; // mouse event coordinates
 
 let tbr = 0; // time between requests
 let lrc; // last called time
@@ -29,17 +32,44 @@ class ClientRender extends React.Component {
   componentDidMount(){
     socket = this.props.socket;
     cvs = this.refs.canvas;
+
     cvs.width = cvs.clientWidth;
     cvs.height = cvs.clientHeight;
-
     window.onresize = function(){
       cvs.width = cvs.clientWidth;
       cvs.height = cvs.clientHeight;
     };
 
+    cvs.addEventListener( "mouseover", mouseOver, false );
+    cvs.addEventListener( "mousemove", mouseOver, false );
+    cvs.addEventListener( "mouseout", mouseOut, false );
+
     ctx = this.refs.canvas.getContext( '2d' );
     clientInit();
   }
+};
+
+const mouseOver = function( e ){
+  if( !mrs ){
+    return;
+  }
+
+  mec = {
+    x: cvs.width  - e.x,
+    y: cvs.height - e.y
+  };
+  mrs = false;
+
+  socket.emit( 'clientMouseOnStream', mec );
+}
+
+const mouseOut = function( e ){
+  if( !mrs ){
+    return;
+  }
+  mrs = false;
+
+  socket.emit( 'clientMouseOffStream' );
 };
 
 const clientInit = function(){
@@ -49,6 +79,10 @@ const clientInit = function(){
 
   socket.on( 'connect', function( data ){
     socket.emit( 'join', 'Hello World from Client-side' );
+  });
+
+  socket.on( 'clientColorPush', function( data ){
+    ucv = data; // TODO set color value div "color" to this color
   });
 
   socket.on( 'bubblePush', function( data ){
@@ -67,9 +101,14 @@ const clientLoop = function(){
 
   let delta = ( now() - lrc );
   lrc = now();
-  tbr = 1 / delta;
+  tbr = delta / 1000;
+  mrs = true;
 
+  if( mrs ){
+    socket.emit( 'mousePush', mec );
+  }
   socket.emit( 'bubblePull' );
+
   requestAnimationFrame( clientLoop );
 };
 

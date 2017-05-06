@@ -24,17 +24,17 @@ function generateNumber( min, max ) {
 }
 
 const Bubble = {
-	createBase: function createBase( bounds ) {
+	createBase: function createBase( coord, color ) {
 		const bubble = new BubbleClass(
-			generateNumber( 0, bounds.x ),
-			generateNumber( 0, bounds.y ),
-			generateNumber( -10, 10 ),
-			generateNumber( -10, 10 ),
-			generateNumber( 0, maxInitialRadius ),
+			coord.x,
+			coord.y,
+			0,
+			0,
 			maxInitialRadius,
-			generateNumber( minDecayRate, 1 ),
-			"neutral",
-			"rbga(255,255,255,0.8)",
+			maxInitialRadius,
+			0,
+			"user",
+			color,
 			0 );
 
 		return bubble;
