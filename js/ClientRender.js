@@ -54,13 +54,15 @@ const mouseOver = function( e ){
     return;
   }
 
+  const rect = cvs.getBoundingClientRect();
+
   mec = {
-    x: cvs.width  - e.x,
-    y: cvs.height - e.y
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top
   };
   mrs = false;
 
-  socket.emit( 'clientMouseOnStream', mec );
+  socket.emit( 'mouseOnPush', mec );
 }
 
 const mouseOut = function( e ){
@@ -69,7 +71,7 @@ const mouseOut = function( e ){
   }
   mrs = false;
 
-  socket.emit( 'clientMouseOffStream' );
+  socket.emit( 'mouseOffPush' );
 };
 
 const clientInit = function(){
@@ -104,11 +106,7 @@ const clientLoop = function(){
   tbr = delta / 1000;
   mrs = true;
 
-  if( mrs ){
-    socket.emit( 'mousePush', mec );
-  }
   socket.emit( 'bubblePull' );
-
   requestAnimationFrame( clientLoop );
 };
 

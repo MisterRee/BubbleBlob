@@ -24,7 +24,7 @@ function generateNumber( min, max ) {
 }
 
 const Bubble = {
-	createBase: function createBase( coord, color ) {
+	createBase: function createBase( coord, user, color ) {
 		const bubble = new BubbleClass(
 			coord.x,
 			coord.y,
@@ -35,8 +35,8 @@ const Bubble = {
 			0,
 			"user",
 			color,
-			0 );
-
+			user );
+		bubble.draw = false;
 		return bubble;
 	},
 
@@ -72,7 +72,7 @@ const Bubble = {
 		let points = Math.floor( generateNumber( 255, 510 ) );
 		let r = generateNumber( 0, 255 );
 		points -= r;
-		let g = generateNumber(0, r);
+		let g = generateNumber( 0, r );
 		points -= g;
 		let b = points;
 		const string = "rgba(" + Math.floor( r ) + "," + Math.floor( g ) + "," + Math.floor( b ) + ",0.80)";
