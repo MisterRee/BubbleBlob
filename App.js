@@ -11,16 +11,11 @@ io.on( 'connection', function( client ){
   console.log( 'Client connected!' );
 
   client.on( 'join', function( data ){
-    client.join( 'main' ); // There's only one room in this app at the moment
-
+    client.join( 'main' ); // There's only one room in this app
 		client.userColor = Bubble.colorize();
-    console.log( client.userColor );
-
     client.user = generateID();
-    console.log( generateID() );
 		const tempBubble = Bubble.createBase( { x: -500, y: -500 }, client.user, client.userColor );
 		client.Bubble = tempBubble;
-
 		client.mousePosition = { x: -500, y: -500 };
 
 		users.push( client );
@@ -72,16 +67,25 @@ io.on( 'connection', function( client ){
 });
 
 const generateID = function(){
-  let id = Math.round( Math.random() * 1000 );
+  let pass = false;
+  let test, id;
 
-  for( let i = users.length - 1; i >= 0; i-- ){
-    if( users[ i ].user === id ){
-      console.log( 'looped' );
-      generateID();
+  while( !pass ){
+    test = true;
+    id = Math.round( Math.random() * 1000 );
+
+    for( let i = users.length - 1; i >= 0; i-- ){
+      if( users[ i ].user === id ){
+        test = false;
+      };
     };
 
-    return id;
+    if( test ){
+      pass = true;
+    }
   };
+
+  return id;
 };
 
 App.use( express.static( __dirname + '/public' ) );

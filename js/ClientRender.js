@@ -1,7 +1,7 @@
 const now = require( 'performance-now' );
 const React = require( 'react' );
 
-let socket, cvs, ctx, ucv;
+let socket, cvs, ctx, cdv;
 let mrs = false; // mouse ready state
 let mos = false; // mouse over state
 let mec; // mouse event coordinates
@@ -20,7 +20,7 @@ class ClientRender extends React.Component {
         <div className="Header">
           <h1>Bubbles.io</h1>
         </div>
-        <div className="Color"></div>
+        <div className="Color"  ref="color"></div>
         <canvas className="GUI" ref="canvas"></canvas>
         <div className="Footer">
           <p> { this.props.count } </p>
@@ -32,6 +32,7 @@ class ClientRender extends React.Component {
   componentDidMount(){
     socket = this.props.socket;
     cvs = this.refs.canvas;
+    cdv = this.refs.color;
 
     cvs.width = cvs.clientWidth;
     cvs.height = cvs.clientHeight;
@@ -84,7 +85,7 @@ const clientInit = function(){
   });
 
   socket.on( 'clientColorPush', function( data ){
-    ucv = data; // TODO set color value div "color" to this color
+    cdv.style.backgroundColor = data; // TODO set color value div "color" to this color
   });
 
   socket.on( 'bubblePush', function( data ){
