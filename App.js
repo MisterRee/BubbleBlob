@@ -95,20 +95,19 @@ App.get( '/', function( req, res ){
 });
 
 // Game variables
-const c_gr = 3;  // user growth ratio
+const c_gr = 0.0001;  // user growth ratio
 let mnb = 30; // maximum number of bubbles
 
 let tbr = 0;
 let lrc;
 
-let clientBounds = { x: 750, y: 500 };
 let users = [];
 let userColors = [];
 let bubbleArray = [];
 
 const gameInit = function(){
   for( let i = 0; i < mnb; i++ ){
-    let tempBubble = Bubble.createNeutral( clientBounds );
+    let tempBubble = Bubble.createNeutral();
     bubbleArray.push( tempBubble );
   }
   gameLoop();
@@ -134,7 +133,6 @@ const serverCalculate = function( time ){
 	for( let i = bubbleArray.length - 1; i >= 0; i-- ){
 		cycleBubble( bubbleArray[ i ], i, time );
 	};
-
 	const cList = Bubble.detectCollisions( bubbleArray );
 	for( let u = cList.length - 1; u >= 0; u-- ){
 		for( let y = cList[ u ].collisions.length - 1; y >= 0; y-- ){
@@ -163,7 +161,7 @@ const cycleBubble = function( bubble, index, time ){
 				const bloom = Bubble.createBloom( bubble.position, bubble.baseRadius * 3, bubble.color );
 				bubbleArray.push( bloom );
 				bubbleArray.splice( index, 1 );
-				const tempBubble = Bubble.createNeutral( clientBounds );
+				const tempBubble = Bubble.createNeutral();
 				bubbleArray.push( tempBubble );
 				break; // Code below is omitted for this deleted bubble instance
 			};
@@ -173,15 +171,15 @@ const cycleBubble = function( bubble, index, time ){
 			bubble.position.y += bubble.velocity.y * time;
 			// Calculations for bouncing off edges
 			if( bubble.position.x + bubble.radius < 0 ){
-				bubble.position.x = clientBounds.x + bubble.radius;
+				bubble.position.x = 1 + bubble.radius;
 			};
-			if( bubble.position.x - bubble.radius > clientBounds.x ){
+			if( bubble.position.x - bubble.radius > 1 ){
 				bubble.position.x = -bubble.radius;
 			};
 			if( bubble.position.y  + bubble.radius < 0 ){
-				bubble.position.y = clientBounds.y + bubble.radius;
+				bubble.position.y = 1 + bubble.radius;
 			};
-			if( bubble.position.y - bubble.radius > clientBounds.y ){
+			if( bubble.position.y - bubble.radius > 1 ){
 				bubble.position.y = -bubble.radius;
 			};
 			break;
@@ -193,7 +191,7 @@ const cycleBubble = function( bubble, index, time ){
 				for(var i = users.length - 1; i >= 0; i--){
 					if( bubble.user == users[ i ].user ){
 						bubble.position = users[ i ].mousePosition;
-						bubble.radius = bubble.baseRadius + ( bubble.points / c_gr );
+						bubble.radius = bubble.baseRadius + ( bubble.points * c_gr );
 					}
 				}
 			} else {

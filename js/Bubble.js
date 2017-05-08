@@ -1,7 +1,8 @@
 // Constants
-const maxInitialRadius = 20;
-const maxBloomRadius = 20;
-const minDecayRate = 0.1;
+const maxVelocity = 0.1;
+const maxInitialRadius = 0.1;
+const maxDecayRate = 0.025;
+const minDecayRate = 0.005;
 const bloomRatio = 0.5;
 
 // Base Object
@@ -40,15 +41,15 @@ const Bubble = {
 		return bubble;
 	},
 
-	createNeutral: function createNeutral( clientBounds ) {
+	createNeutral: function createNeutral() {
 		const bubble = new BubbleClass(
-			generateNumber( 0, clientBounds.x ),
-			generateNumber( 0, clientBounds.y ),
-			generateNumber( -10, 10 ),
-			generateNumber( -10, 10 ),
-			generateNumber( 0, maxInitialRadius ),
+			Math.random(),
+			Math.random(),
+			Math.random() * maxVelocity - maxVelocity / 2,
+			Math.random() * maxVelocity - maxVelocity / 2,
+			Math.random() * maxInitialRadius,
 			maxInitialRadius,
-			generateNumber( minDecayRate, 1 ),
+			Math.random() * ( maxDecayRate - minDecayRate ) + minDecayRate,
 			"neutral",
 			"rgba(255,255,255,0.80)",
 			0 );

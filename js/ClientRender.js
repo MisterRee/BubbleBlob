@@ -4,7 +4,7 @@ const React = require( 'react' );
 let socket, cvs, ctx, cdv;
 let mrs = false; // mouse ready state
 let mos = false; // mouse over state
-let mec; // mouse event coordinates
+let mec, bcr, gdv; // mouse event coordinates, bounding canvas rectangle, greater dimension value
 
 let tbr = 0; // time between requests
 let lrc; // last called time
@@ -36,9 +36,14 @@ class ClientRender extends React.Component {
 
     cvs.width = cvs.clientWidth;
     cvs.height = cvs.clientHeight;
+
+    set_gdv();
+
     window.onresize = function(){
       cvs.width = cvs.clientWidth;
       cvs.height = cvs.clientHeight;
+
+      set_gdv();
     };
 
     cvs.addEventListener( "mouseover", mouseOver, false );
@@ -50,6 +55,14 @@ class ClientRender extends React.Component {
   }
 };
 
+const set_gdv = function(){
+  if( cvs.width > cvs.height ){
+    gdv = cvs.width;
+  } else {
+    gdv = cvs.height;
+  }
+};
+
 const mouseOver = function( e ){
   if( !mrs ){
     return;
@@ -58,8 +71,8 @@ const mouseOver = function( e ){
   const rect = cvs.getBoundingClientRect();
 
   mec = {
-    x: e.clientX - rect.left,
-    y: e.clientY - rect.top
+    x: ( e.clientX - rect.left ) / cvs.width ,
+    y: ( e.clientY - rect.top  ) / cvs.height
   };
   mrs = false;
 
@@ -85,7 +98,7 @@ const clientInit = function(){
   });
 
   socket.on( 'clientColorPush', function( data ){
-    cdv.style.backgroundColor = data; // TODO set color value div "color" to this color
+    cdv.style.backgroundColor = data;
   });
 
   socket.on( 'bubblePush', function( data ){
@@ -132,9 +145,9 @@ const clientDraw = function( data ){
     }
 
     ctx.arc(
-      tempBubble.position.x,
-      tempBubble.position.y,
-      tempBubble.radius,
+      tempBubble.position.x * cvs.width,
+      tempBubble.position.y * cvs.height,
+      tempBubble.radius * gdv / 2,
       0, Math.PI * 2,
       false );
     ctx.closePath();
