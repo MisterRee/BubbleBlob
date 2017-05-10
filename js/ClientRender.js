@@ -9,9 +9,27 @@ let mec, bcr, gdv; // mouse event coordinates, bounding canvas rectangle, greate
 let tbr = 0; // time between requests
 let lrc; // last called time
 
+let neutralCount = 0;
+let userCount = 0;
+let otherCount = 0;
+
 class ClientRender extends React.Component {
   constructor( props ){
     super( props );
+  }
+
+  getInitialState(){
+    return {
+      nc: 0,
+      uc: 0,
+      oc: 0
+    }
+  }
+
+  update(){
+    this.nc = neutralCount;
+    this.uc = userCount;
+    this.oc = otherCount;
   }
 
   render(){
@@ -23,7 +41,9 @@ class ClientRender extends React.Component {
         <div className="Color"  ref="color"></div>
         <canvas className="GUI" ref="canvas"></canvas>
         <div className="Footer">
-          <p> { this.props.count } </p>
+          <p> { neutralCount } </p>
+          <p> { userCount } </p>
+          <p> { otherCount } </p>
         </div>
       </div>
     )
@@ -99,6 +119,12 @@ const clientInit = function(){
 
   socket.on( 'clientColorPush', function( data ){
     cdv.style.backgroundColor = data;
+  });
+
+  socket.on( 'statsPush', function( data ){
+    neutralCount = data.stats.nc;
+    userCount = data.user;
+    otherCount = data.user - data.stats.uc;
   });
 
   socket.on( 'bubblePush', function( data ){

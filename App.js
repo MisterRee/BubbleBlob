@@ -42,6 +42,18 @@ io.on( 'connection', function( client ){
   });
 
   client.on( 'bubblePull', function(){
+    let currentUser;
+    let packet = {};
+    for( let i = users.length - 1; i >= 0; i-- ){
+			if( client.user == users[ i ].user ){
+				currentUser = users[ i ];
+			}
+		}
+
+    packet.user = currentUser.Bubble.points;
+    packet.stats = stats;
+
+    client.emit( 'statsPush', packet );
     client.emit( 'bubblePush', bubbleArray );
   });
 
@@ -101,6 +113,7 @@ let mnb = 30; // maximum number of bubbles
 let tbr = 0;
 let lrc;
 
+let stats = {};
 let users = [];
 let userColors = [];
 let bubbleArray = [];
@@ -138,6 +151,17 @@ const serverCalculate = function( time ){
 		for( let y = cList[ u ].collisions.length - 1; y >= 0; y-- ){
 			resolveCollision( cList[ u ].reference, cList[ u ].collisions[ y ] );
 		};
+	};
+
+  stats.nc = 0;
+  stats.uc = 0;
+
+  for( let i = bubbleArray.length - 1; i >= 0; i-- ){
+    if( bubbleArray[ i ].type === "neutral" ){
+      stats.nc++;
+    } else if ( bubbleArray[ i ].type === "colored" ){
+      stats.uc++;
+    };
 	};
 };
 
